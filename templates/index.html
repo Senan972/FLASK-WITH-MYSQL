@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Interest Points Charts</title>
+	<style>
+		.chart-container {
+			display: inline-block;
+			margin: 20px;
+			border: 1px solid #ccc;
+			padding: 10px;
+		}
+
+		.chart-container h3 {
+			margin-top: 0;
+		}
+
+		.chart-container img {
+			max-width: 100%;
+		}
+	</style>
+</head>
+<body>
+	<h1>Interest Points Charts</h1>
+	<div class="chart-container">
+		<h3>All Categories</h3>
+		<img src="data:image/png;base64,{{ chart }}" alt="chart">
+	</div>
+</body>
+</html>
