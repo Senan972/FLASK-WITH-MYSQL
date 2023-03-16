@@ -4,11 +4,13 @@
 	<title>Interest Points Charts</title>
 	<style>
 		.chart-container {
-			display: inline-block;
-			margin: 20px;
-			border: 1px solid #ccc;
-			padding: 10px;
-		}
+  display: inline-block;
+  margin: 20px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  clear: both; /* Add this line to create open space */
+}
+
 
 		.chart-container h3 {
 			margin-top: 0;
@@ -20,10 +22,11 @@
 	</style>
 </head>
 <body>
-	<h1>Interest Points Charts</h1>
-	<div class="chart-container">
-		<h3>All Categories</h3>
-		<img src="data:image/png;base64,{{ chart }}" alt="chart">
-	</div>
+	{% for i in range(subcat_dict|length) %}
+    <div class="chart-container">
+        <img src="data:image/png;base64,{{ charts[i] }}" />
+    </div>
+{% endfor %}
+
 </body>
 </html>
