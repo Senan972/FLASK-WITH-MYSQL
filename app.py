@@ -1,145 +1,77 @@
-import base64
-import datetime
-from io import BytesIO
-from flask import Flask, jsonify, request, render_template
-from flask_mysqldb import MySQL
+from flask import Flask, render_template
+import mysql.connector
+from datetime import datetime
 import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use('agg')
+import numpy as np
+import os
+from io import BytesIO
+import base64
 
 app = Flask(__name__)
 
-# configure the database connection
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'products_db'
-
-mysql = MySQL(app)
+# MySQL configuration
+mysql_config = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': '',
+    'database': 'interest_points'
+}
 
 # create a dictionary to map sub-category ID with sub-category name
 subcat_dict = {
     1: 'Fishery',
     2: 'Meat',
     3: 'Medical Accessories',
-    4: 'Fruits',
-    5: 'Vegetables',
-    6: 'Packed Fruits and Vegetables',
-    7: 'Medical Consumables',
-    8: 'Medical Ointments & Sprays',
-    9: 'Chocolates',
-    10: 'Biscuits',
-    11: 'Croissant',
-    12: 'Ice-Cream',
-    13: 'Milk',
-    14: 'Baby Diapers',
-    15: 'Baby Milk Formula',
-    16: 'Baby Feeding Accessories',
-    17: 'Adult Pads',
-    18: 'Sensual Care',
-    19: 'Personal Care',
-    20: 'Hygiene',
-    21: 'Household Care',
-    22: 'Fragrances',
-    23: 'Perfumes',
-    24: 'Air Fragrances',
-    25: 'Surface Cleaners',
-    26: 'Dish Washers',
-    27: 'Laundry',
-    28: 'Facial Care',
-    29: 'Body Care',
-    30: 'Oral Care',
-    31: 'Baby Oral Care',
-    32: 'Baby Body Care',
-    33: 'Soap & Body Wash',
-    34: 'Baby Bath supplies',
-    35: 'Foodgrains',
-    36: 'Rice',
-    37: 'Pulses',
-    38: 'Salt',
-    39: 'Sugar',
-    40: 'Chips and other snacks',
-    41: 'Frozen Meat',
-    42: 'Frozen Poultry',
-    43: 'Fresh Poultry',
-    44: 'Canned Poultry',
-    45: 'Canned Meat',
-    46: 'Canned Fish',
-    47: 'Canned Fruits',
-    48: 'Canned Veggies',
-    49: 'Frozen Veggies',
-    50: 'Frozen Fruits'
 }
 
-# create a dictionary to map product ID with sub-category ID
-product_dict = {
-    1: 4,
-    2: 44,
-    3: 24,
-    4: 12,
-    5: 27,
-    6: 14,
-    7: 9,
-    8: 13,
-    9: 28,
-    10: 30
-}
 
-# create a dictionary to map sub-category ID with a list of interest points on each date
-subcat_interest = {}
-for subcat_id in subcat_dict:
-    subcat_interest[subcat_id] = {}
+@app.route('/')
+def index():
+    # query the database for interest points data
+    cnx = mysql.connector.connect(**mysql_config)
+    cursor = cnx.cursor()
+    query = "SELECT subcat_id, date, interest_points FROM interest_points_table"
+    cursor.execute(query)
+    data = cursor.fetchall()
+    cnx.close()
 
-# insert the given data into the database
-@app.route('/insert-data', methods=['POST'])
-def insert_data():
-    data = request.json
-    cursor = mysql.connection.cursor()
+    # create a dictionary to store the interest points for each sub-category and date
+    interest_points_dict = {}
+    for subcat_id in subcat_dict:
+        interest_points_dict[subcat_id] = {}
+    
+    # process the data and populate the interest_points_dict
     for row in data:
-        date = datetime.strptime(row['Date'], '%d/%m/%Y')
-        product_id = row['Product_ID']
-        subcat_id = product_dict[product_id]
-        interest_point = row['Interest_Point']
-        if date not in subcat_interest[subcat_id]:
-            subcat_interest[subcat_id][date] = interest_point
+        subcat_id = row[0]
+        date = row[1]
+        interest_points = row[2]
+        if date not in interest_points_dict[subcat_id]:
+            interest_points_dict[subcat_id][date] = interest_points
         else:
-            subcat_interest[subcat_id][date] += interest_point
-        cursor.execute('INSERT INTO sub_category_interest (Subcategory_ID, Date, Interest_Point) VALUES (%s, %s, %s)', (subcat_id, date, interest_point))
-        mysql.connection.commit()
-    cursor.close()
-    return jsonify({'message': 'Data inserted successfully.'})
+            interest_points_dict[subcat_id][date] += interest_points
+    
+    # create a bar chart for each sub-category
+    fig, axs = plt.subplots(len(subcat_dict), 1, figsize=(10, 20), sharex=True, sharey=True)
+    plt.subplots_adjust(hspace=0.4)
+    for i, subcat_id in enumerate(subcat_dict):
+        if subcat_id in interest_points_dict:
+            dates = sorted(interest_points_dict[subcat_id].keys())
+            interest_points = [interest_points_dict[subcat_id][date] for date in dates]
+            x_ticks = np.arange(len(dates))
+            axs[i].bar(x_ticks, interest_points, align='center', alpha=0.5)
+            axs[i].set_xticks(x_ticks)
+            axs[i].set_xticklabels(dates)
+            axs[i].set_ylabel('Interest Points')
+            axs[i].set_title(subcat_dict[subcat_id])
+    
+    # save the chart image as a byte stream
+    buf = BytesIO()
+    fig.savefig(buf, format='png')
+    buf.seek(0)
+    chart = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close(fig)
+    
+    return render_template('index.html', chart=chart)
 
-
-import plotly.graph_objs as go
-
-# render the line chart for sub-category interest points
-@app.route('/subcat-interest-chart')
-def subcat_interest_chart():
-    # Create a list of x and y values for each sub-category
-    x_values = []
-    y_values = []
-    for subcat_id in subcat_interest:
-        subcat_name = subcat_dict[subcat_id]
-        x_values.append(subcat_name)
-        y_values.append(sum(subcat_interest[subcat_id].values()))
-
-    # Create a Plotly trace for the line chart
-    trace = go.Scatter(
-        x=x_values,
-        y=y_values,
-        mode='lines+markers',
-        name='Interest Points'
-    )
-
-    # Set the chart layout and create the chart figure
-    layout = go.Layout(
-        title='Sub-Category Interest Points',
-        xaxis=dict(title='Sub-Category'),
-        yaxis=dict(title='Interest Points'),
-        margin=dict(l=40, r=20, t=60, b=30)
-    )
-    fig = go.Figure(data=[trace], layout=layout)
-
-    # Get the chart HTML and return it to the template
-    chart_html = fig.to_html(full_html=False)
-    return render_template('subcat_interest_chart.html', chart_html=chart_html)
+if __name__ == '__main__':
+    app.run(debug=True)
