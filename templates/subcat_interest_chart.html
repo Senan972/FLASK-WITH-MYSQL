@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Sub-Category Interest Chart</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
-  </head>
-  <body>
-    <h1>Sub-Category Interest Chart</h1>
-    <div class="chart-container">
-      <img src="data:image/png;base64,{{ chart_url }}" alt="Sub-Category Interest Chart">
-    </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-  </body>
+<head>
+    <title>Sub-Category Interest Points</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div id="chart"></div>
+    <script>
+        // Get the chart HTML from the Flask app
+        var chart_html = "{{ chart_html|safe }}";
+</script>
+</body>
 </html>

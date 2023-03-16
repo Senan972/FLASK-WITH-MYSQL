@@ -109,24 +109,37 @@ def insert_data():
     cursor.close()
     return jsonify({'message': 'Data inserted successfully.'})
 
-# render the bar chart for sub-category interest points
+
+import plotly.graph_objs as go
+
+# render the line chart for sub-category interest points
 @app.route('/subcat-interest-chart')
 def subcat_interest_chart():
-    fig, ax = plt.subplots()
-    x_values = list(subcat_interest.keys())
-    y_values = [sum(subcat_interest[subcat_id].values()) for subcat_id in x_values]
-    ax.bar(x_values, y_values, color='b')
-    ax.set_xticks(list(subcat_interest.keys()))
-    ax.set_xticklabels([subcat_dict[subcat_id] for subcat_id in subcat_interest.keys()], rotation=90)
-    ax.set_xlabel('Sub-Category')
-    ax.set_ylabel('Total Interest Points')
-    plt.tight_layout()
-    chart_url = get_chart_url(fig)
-    return render_template('subcat_interest_chart.html', chart_url=chart_url)
+    # Create a list of x and y values for each sub-category
+    x_values = []
+    y_values = []
+    for subcat_id in subcat_interest:
+        subcat_name = subcat_dict[subcat_id]
+        x_values.append(subcat_name)
+        y_values.append(sum(subcat_interest[subcat_id].values()))
 
-def get_chart_url(fig):
-    buffer = BytesIO()
-    fig.savefig(buffer, format='png')
-    buffer.seek(0)
-    chart_url = base64.b64encode(buffer.getvalue()).decode()
-    return chart_url
+    # Create a Plotly trace for the line chart
+    trace = go.Scatter(
+        x=x_values,
+        y=y_values,
+        mode='lines+markers',
+        name='Interest Points'
+    )
+
+    # Set the chart layout and create the chart figure
+    layout = go.Layout(
+        title='Sub-Category Interest Points',
+        xaxis=dict(title='Sub-Category'),
+        yaxis=dict(title='Interest Points'),
+        margin=dict(l=40, r=20, t=60, b=30)
+    )
+    fig = go.Figure(data=[trace], layout=layout)
+
+    # Get the chart HTML and return it to the template
+    chart_html = fig.to_html(full_html=False)
+    return render_template('subcat_interest_chart.html', chart_html=chart_html)
