@@ -1,0 +1,25 @@
+body {
+  font-family: Arial, sans-serif;
+}
+
+h1 {
+  text-align: center;
+}
+
+.chart-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 50px;
+  width: 100%; 
+  max-width: 800px; /* add a max-width to prevent the container from getting too wide */
+}
+
+
+img {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
+  box-shadow: 0 0 8px 0 rgba(0,0,0,0.2);
+  max-width: 200%;
+  height: auto;
+}

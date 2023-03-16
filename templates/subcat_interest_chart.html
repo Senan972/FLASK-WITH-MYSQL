@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Sub-Category Interest Chart</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <h1>Sub-Category Interest Chart</h1>
+    <div class="chart-container">
+      <img src="data:image/png;base64,{{ chart_url }}" alt="Sub-Category Interest Chart">
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  </body>
+</html>
